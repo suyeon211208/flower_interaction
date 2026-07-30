@@ -1,0 +1,6 @@
+{
+  "name": "Interactive Media Art Landscape",
+  "description": "A dynamic landscape media art application featuring drifting clouds, gently swaying flowers, interactive flower stamp effects on touch, and responsive full-screen canvas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
