@@ -38,6 +38,7 @@ export interface FlowerStamp {
   x: number; // canvas pixel X
   y: number; // canvas pixel Y
   flowerType: 'whiteDaisy' | 'coralDaisy' | 'redPoppy' | 'goldenDaisy' | 'blossom';
+  imageIndex?: number;
   scale: number;
   targetScale: number;
   rotation: number;

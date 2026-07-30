@@ -50,7 +50,8 @@ export function drawLandscape(
   stamps: FlowerStamp[],
   ripples: TouchRipple[],
   bgImage: HTMLImageElement | null,
-  handPositions: { x: number; y: number }[] = []
+  handPositions: { x: number; y: number }[] = [],
+  flowerImages: HTMLImageElement[] = []
 ) {
   ctx.clearRect(0, 0, width, height);
 
@@ -88,7 +89,7 @@ export function drawLandscape(
   drawRipples(ctx, ripples);
 
   // 3. Stamped Interactive Flowers on Touch (Appears on touch, sways, disappears after delay)
-  drawFlowerStamps(ctx, stamps, time);
+  drawFlowerStamps(ctx, stamps, time, flowerImages);
 
   // 4. Camera Hand Tracking Glowing Light Pointer Cursors
   if (handPositions && handPositions.length > 0) {
@@ -664,7 +665,12 @@ function drawRipples(ctx: CanvasRenderingContext2D, ripples: TouchRipple[]) {
 /**
  * Render Interactive Flower Stamps (Stamped on user touch/click)
  */
-function drawFlowerStamps(ctx: CanvasRenderingContext2D, stamps: FlowerStamp[], time: number) {
+function drawFlowerStamps(
+  ctx: CanvasRenderingContext2D,
+  stamps: FlowerStamp[],
+  time: number,
+  flowerImages: HTMLImageElement[] = []
+) {
   stamps.forEach((stamp) => {
     ctx.save();
     ctx.globalAlpha = stamp.opacity;
@@ -693,23 +699,37 @@ function drawFlowerStamps(ctx: CanvasRenderingContext2D, stamps: FlowerStamp[], 
     ctx.ellipse(baseRadius * 0.3, baseRadius * 0.7, baseRadius * 0.35, baseRadius * 0.15, 0.4, 0, Math.PI * 2);
     ctx.fill();
 
-    // Render Flower Head according to stamp flower type
-    switch (stamp.flowerType) {
-      case 'coralDaisy':
-        drawCoralDaisyHead(ctx, 0, 0, baseRadius);
-        break;
-      case 'whiteDaisy':
-        drawWhiteDaisyHead(ctx, 0, 0, baseRadius);
-        break;
-      case 'redPoppy':
-        drawRedPoppyHead(ctx, 0, 0, baseRadius);
-        break;
-      case 'goldenDaisy':
-        drawGoldenDaisyHead(ctx, 0, 0, baseRadius);
-        break;
-      case 'blossom':
-        drawWhiteDaisyHead(ctx, 0, 0, baseRadius * 0.85);
-        break;
+    // Render Flower Head according to stamp custom flower image or fallback flower type
+    const flowerImg =
+      stamp.imageIndex !== undefined &&
+      flowerImages[stamp.imageIndex] &&
+      flowerImages[stamp.imageIndex].complete &&
+      flowerImages[stamp.imageIndex].naturalWidth > 0
+        ? flowerImages[stamp.imageIndex]
+        : null;
+
+    if (flowerImg) {
+      const imgWidth = baseRadius * 2.5;
+      const imgHeight = (flowerImg.naturalHeight / flowerImg.naturalWidth) * imgWidth;
+      ctx.drawImage(flowerImg, -imgWidth / 2, -imgHeight / 2, imgWidth, imgHeight);
+    } else {
+      switch (stamp.flowerType) {
+        case 'coralDaisy':
+          drawCoralDaisyHead(ctx, 0, 0, baseRadius);
+          break;
+        case 'whiteDaisy':
+          drawWhiteDaisyHead(ctx, 0, 0, baseRadius);
+          break;
+        case 'redPoppy':
+          drawRedPoppyHead(ctx, 0, 0, baseRadius);
+          break;
+        case 'goldenDaisy':
+          drawGoldenDaisyHead(ctx, 0, 0, baseRadius);
+          break;
+        case 'blossom':
+          drawWhiteDaisyHead(ctx, 0, 0, baseRadius * 0.85);
+          break;
+      }
     }
 
     ctx.restore();

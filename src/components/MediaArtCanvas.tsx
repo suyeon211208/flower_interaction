@@ -2,6 +2,10 @@ import React, { useRef, useEffect, useState, useCallback, useImperativeHandle, f
 import { Cloud, SwayingFlower, FlowerStamp, PetalParticle, TouchRipple, HandPosition } from '../types';
 import { drawLandscape } from '../utils/mediaArtRenderer';
 import bgImgUrl from '../assets/images/media_art_bg_1785375717721.jpg';
+import flower1Url from '../assets/images/flower1.png';
+import flower2Url from '../assets/images/flower2.png';
+import flower3Url from '../assets/images/flower3.png';
+import flower4Url from '../assets/images/flower4.png';
 
 export interface MediaArtCanvasHandle {
   spawnFlower: (x: number, y: number) => void;
@@ -21,6 +25,7 @@ export const MediaArtCanvas = forwardRef<MediaArtCanvasHandle, MediaArtCanvasPro
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const bgImageRef = useRef<HTMLImageElement | null>(null);
+  const flowerImagesRef = useRef<HTMLImageElement[]>([]);
 
   // Persistent States in Refs for high performance 60fps rendering without React re-render overhead
   const cloudsRef = useRef<Cloud[]>([]);
@@ -38,7 +43,7 @@ export const MediaArtCanvas = forwardRef<MediaArtCanvasHandle, MediaArtCanvasPro
     handPositionsRef.current = handPositions;
   }, [handPositions]);
 
-  // Load Background Image
+  // Load Background Image and Flower Images
   useEffect(() => {
     const img = new Image();
     img.onload = () => {
@@ -51,6 +56,25 @@ export const MediaArtCanvas = forwardRef<MediaArtCanvasHandle, MediaArtCanvasPro
     if (img.complete && img.naturalWidth > 0) {
       bgImageRef.current = img;
     }
+
+    const flowerUrls = [flower1Url, flower2Url, flower3Url, flower4Url];
+    const loadedFlowerImgs: HTMLImageElement[] = [];
+
+    flowerUrls.forEach((url, index) => {
+      const fImg = new Image();
+      fImg.onload = () => {
+        loadedFlowerImgs[index] = fImg;
+      };
+      fImg.onerror = (err) => {
+        console.error(`Failed to load flower image ${index + 1}:`, url, err);
+      };
+      fImg.src = url;
+      if (fImg.complete && fImg.naturalWidth > 0) {
+        loadedFlowerImgs[index] = fImg;
+      }
+    });
+
+    flowerImagesRef.current = loadedFlowerImgs;
   }, []);
 
   // Clear procedural clouds and base flowers
@@ -120,6 +144,7 @@ export const MediaArtCanvas = forwardRef<MediaArtCanvasHandle, MediaArtCanvasPro
       x,
       y,
       flowerType: randomType,
+      imageIndex: Math.floor(Math.random() * 4),
       scale: 0.05, // starts small for pop animation
       targetScale: randomScale,
       rotation: (Math.random() - 0.5) * 0.6,
@@ -291,7 +316,8 @@ export const MediaArtCanvas = forwardRef<MediaArtCanvasHandle, MediaArtCanvasPro
         stampsRef.current,
         ripplesRef.current,
         bgImageRef.current,
-        handPositionsRef.current
+        handPositionsRef.current,
+        flowerImagesRef.current
       );
 
       animationFrameId.current = requestAnimationFrame(render);
