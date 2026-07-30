@@ -1,14 +1,23 @@
-import React, { useRef, useEffect, useState, useCallback } from 'react';
-import { Cloud, SwayingFlower, FlowerStamp, PetalParticle, TouchRipple } from '../types';
+import React, { useRef, useEffect, useState, useCallback, useImperativeHandle, forwardRef } from 'react';
+import { Cloud, SwayingFlower, FlowerStamp, PetalParticle, TouchRipple, HandPosition } from '../types';
 import { drawLandscape } from '../utils/mediaArtRenderer';
 import bgImgUrl from '../assets/images/media_art_bg_1785375717721.jpg';
 
+export interface MediaArtCanvasHandle {
+  spawnFlower: (x: number, y: number) => void;
+}
+
 interface MediaArtCanvasProps {
+  handPositions?: HandPosition[];
   onStampCreated?: () => void;
   showHint?: boolean;
 }
 
-export const MediaArtCanvas: React.FC<MediaArtCanvasProps> = ({ onStampCreated, showHint = true }) => {
+export const MediaArtCanvas = forwardRef<MediaArtCanvasHandle, MediaArtCanvasProps>(({
+  handPositions = [],
+  onStampCreated,
+  showHint = true,
+}, ref) => {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const animationFrameId = useRef<number | null>(null);
   const bgImageRef = useRef<HTMLImageElement | null>(null);
@@ -20,8 +29,14 @@ export const MediaArtCanvas: React.FC<MediaArtCanvasProps> = ({ onStampCreated, 
   const ripplesRef = useRef<TouchRipple[]>([]);
   const isPointerDownRef = useRef<boolean>(false);
   const lastStampPosRef = useRef<{ x: number; y: number } | null>(null);
+  const handPositionsRef = useRef<HandPosition[]>(handPositions);
 
   const [hintVisible, setHintVisible] = useState(showHint);
+
+  // Keep hand positions ref synced
+  useEffect(() => {
+    handPositionsRef.current = handPositions;
+  }, [handPositions]);
 
   // Load Background Image
   useEffect(() => {
@@ -41,8 +56,19 @@ export const MediaArtCanvas: React.FC<MediaArtCanvasProps> = ({ onStampCreated, 
     swayingFlowersRef.current = [];
   }, []);
 
-  // Spawn Flower Stamp on Touch/Click
+  // Spawn Flower Stamp on Touch/Click/Camera
   const createFlowerStamp = useCallback((x: number, y: number) => {
+    // Prevent flowers from overlapping closely with existing active stamps (minimum 85px gap)
+    const MIN_FLOWER_SPACING = 85;
+    const isTooClose = stampsRef.current.some((stamp) => {
+      const dist = Math.hypot(stamp.x - x, stamp.y - y);
+      return dist < MIN_FLOWER_SPACING;
+    });
+
+    if (isTooClose) {
+      return;
+    }
+
     // Hide touch hint when user stamps
     if (hintVisible) {
       setHintVisible(false);
@@ -114,6 +140,13 @@ export const MediaArtCanvas: React.FC<MediaArtCanvasProps> = ({ onStampCreated, 
       onStampCreated();
     }
   }, [hintVisible, onStampCreated]);
+
+  // Expose spawnFlower handle for external camera tracking triggers
+  useImperativeHandle(ref, () => ({
+    spawnFlower: (x: number, y: number) => {
+      createFlowerStamp(x, y);
+    },
+  }));
 
   // Pointer & Touch Handlers
   const handlePointerDown = (e: React.PointerEvent<HTMLCanvasElement>) => {
@@ -251,7 +284,8 @@ export const MediaArtCanvas: React.FC<MediaArtCanvasProps> = ({ onStampCreated, 
         swayingFlowersRef.current,
         stampsRef.current,
         ripplesRef.current,
-        bgImageRef.current
+        bgImageRef.current,
+        handPositionsRef.current
       );
 
       animationFrameId.current = requestAnimationFrame(render);
@@ -279,15 +313,17 @@ export const MediaArtCanvas: React.FC<MediaArtCanvasProps> = ({ onStampCreated, 
         className="block w-full h-full cursor-pointer touch-none"
       />
 
-      {/* Touch Interaction Hint Kiosk Display */}
+      {/* Subtle indicator without text overlay */}
       {hintVisible && (
         <div className="absolute bottom-8 left-1/2 -translate-x-1/2 pointer-events-none transition-opacity duration-700">
-          <div className="flex items-center gap-2 px-5 py-2.5 rounded-full bg-black/40 backdrop-blur-md border border-white/20 text-white/90 text-sm md:text-base font-medium shadow-lg animate-pulse">
-            <span className="w-2.5 h-2.5 rounded-full bg-amber-400 animate-ping" />
-            <span>화면을 터치하여 꽃 도장을 피워보세요</span>
+          <div className="flex items-center justify-center p-3 rounded-full bg-black/30 backdrop-blur-md border border-white/20 text-white/90 shadow-lg">
+            <span className="w-2.5 h-2.5 rounded-full bg-amber-300 animate-ping" />
           </div>
         </div>
       )}
     </div>
   );
-};
+});
+
+MediaArtCanvas.displayName = 'MediaArtCanvas';
+

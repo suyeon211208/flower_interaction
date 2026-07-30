@@ -56,3 +56,12 @@ export interface TouchRipple {
   maxRadius: number;
   opacity: number;
 }
+
+export interface HandPosition {
+  id: string;
+  x: number; // canvas pixel X
+  y: number; // canvas pixel Y
+  rawX: number; // 0 to 1
+  rawY: number; // 0 to 1
+  isPinching?: boolean;
+}

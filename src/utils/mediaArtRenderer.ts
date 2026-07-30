@@ -49,7 +49,8 @@ export function drawLandscape(
   swayingFlowers: SwayingFlower[],
   stamps: FlowerStamp[],
   ripples: TouchRipple[],
-  bgImage: HTMLImageElement | null
+  bgImage: HTMLImageElement | null,
+  handPositions: { x: number; y: number }[] = []
 ) {
   ctx.clearRect(0, 0, width, height);
 
@@ -88,6 +89,55 @@ export function drawLandscape(
 
   // 3. Stamped Interactive Flowers on Touch (Appears on touch, sways, disappears after delay)
   drawFlowerStamps(ctx, stamps, time);
+
+  // 4. Camera Hand Tracking Glowing Light Pointer Cursors
+  if (handPositions && handPositions.length > 0) {
+    drawHandCursors(ctx, handPositions, time);
+  }
+}
+
+/**
+ * Camera Hand Tracking Light Cursors
+ */
+export function drawHandCursors(
+  ctx: CanvasRenderingContext2D,
+  hands: { x: number; y: number }[],
+  time: number
+) {
+  hands.forEach((h, idx) => {
+    ctx.save();
+
+    // Outer radial light glow aura
+    const pulse = Math.sin(time * 0.008 + idx * 1.5) * 6;
+    const radius = 32 + pulse;
+    const gradient = ctx.createRadialGradient(h.x, h.y, 0, h.x, h.y, radius * 2.2);
+    gradient.addColorStop(0, 'rgba(255, 250, 220, 0.95)');
+    gradient.addColorStop(0.35, 'rgba(255, 170, 70, 0.6)');
+    gradient.addColorStop(0.7, 'rgba(235, 90, 50, 0.25)');
+    gradient.addColorStop(1, 'rgba(235, 90, 50, 0)');
+
+    ctx.fillStyle = gradient;
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, radius * 2.2, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Inner bright core point
+    ctx.fillStyle = '#FFFFFF';
+    ctx.shadowColor = '#FF9D25';
+    ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, 7, 0, Math.PI * 2);
+    ctx.fill();
+
+    // Glowing ring boundary around hand cursor position
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.85)';
+    ctx.lineWidth = 2.5;
+    ctx.beginPath();
+    ctx.arc(h.x, h.y, radius, 0, Math.PI * 2);
+    ctx.stroke();
+
+    ctx.restore();
+  });
 }
 
 /**

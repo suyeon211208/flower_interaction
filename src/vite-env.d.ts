@@ -19,3 +19,10 @@ declare module '*.mp3' {
   const src: string;
   export default src;
 }
+
+interface Window {
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Hands: any;
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  Camera: any;
+}
