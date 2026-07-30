@@ -41,10 +41,16 @@ export const MediaArtCanvas = forwardRef<MediaArtCanvasHandle, MediaArtCanvasPro
   // Load Background Image
   useEffect(() => {
     const img = new Image();
-    img.src = bgImgUrl;
     img.onload = () => {
       bgImageRef.current = img;
     };
+    img.onerror = (err) => {
+      console.error('Failed to load background image:', bgImgUrl, err);
+    };
+    img.src = bgImgUrl;
+    if (img.complete && img.naturalWidth > 0) {
+      bgImageRef.current = img;
+    }
   }, []);
 
   // Clear procedural clouds and base flowers
